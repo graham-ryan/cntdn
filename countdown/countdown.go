@@ -3,7 +3,6 @@ package countdown
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/charmbracelet/bubbles/textinput"
 	"github.com/charmbracelet/bubbles/timer"
@@ -39,7 +38,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case timer.TickMsg:
-		var cmd tea.Cmd
 		m.timer, cmd = m.timer.Update(msg)
 		return m, cmd
 
@@ -58,17 +56,27 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		case tea.KeyEnter:
 			if m.textInput.Focused() {
+				initialTimeout := m.textInput.Placeholder
 				if m.textInput.Value() != "" {
-					m.textInput.Blur()
-					m.timer = timer.NewWithInterval(5*time.Minute, 1*time.Second)
-					cmd = m.timer.Init()
+					initialTimeout = m.textInput.Value()
 				}
+
+				parsedTimeout, err := parseTime(initialTimeout)
+				if err != nil {
+					m.err = err
+					return m, nil
+				}
+
+				m.textInput.Blur()
+				m.timer = timer.New(parsedTimeout)
+				cmd = m.timer.Init()
+
 				return m, cmd
 			} else {
 				cmd = m.timer.Toggle()
 				return m, cmd
 			}
-		case tea.KeyRunes:
+		case tea.KeyRunes, tea.KeyBackspace:
 			m.textInput, cmd = m.textInput.Update(msg)
 			return m, cmd
 		}
