@@ -19,7 +19,7 @@ type model struct {
 
 func InitialModel() model {
 	ti := textinput.New()
-	ti.Placeholder = "30s" // idea: use previously used time
+	ti.Placeholder = "5m" // idea: use previously used time
 	ti.Focus()
 	ti.CharLimit = 156
 	ti.Width = 20
@@ -60,7 +60,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.textInput.Focused() {
 				if m.textInput.Value() != "" {
 					m.textInput.Blur()
-					// TODO: Need to check if there's already a timer, this causes multiple timers to start after togglings
 					m.timer = timer.NewWithInterval(5*time.Minute, 1*time.Second)
 					cmd = m.timer.Init()
 				}
