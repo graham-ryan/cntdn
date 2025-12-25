@@ -3,6 +3,7 @@ package countdown
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/charmbracelet/bubbles/textinput"
 	"github.com/charmbracelet/bubbles/timer"
@@ -20,10 +21,11 @@ func InitialModel() model {
 	ti := textinput.New()
 	ti.Placeholder = "5m" // idea: use previously used time
 	ti.Focus()
-	ti.CharLimit = 156
+	ti.CharLimit = 20
 	ti.Width = 20
 
 	return model{
+		timer:     timer.New(5 * time.Minute),
 		textInput: ti,
 		err:       nil,
 	}
@@ -46,6 +48,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, cmd
 
 	case timer.TimeoutMsg:
+		notifyErr := notify()
+		if notifyErr != nil {
+			m.err = notifyErr
+		}
 		cmd = m.textInput.Focus()
 		return m, cmd
 
