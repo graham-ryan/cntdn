@@ -7,14 +7,24 @@ import (
 
 	"github.com/charmbracelet/bubbles/textinput"
 	"github.com/charmbracelet/bubbles/timer"
+	"github.com/charmbracelet/lipgloss"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
+
+var style = lipgloss.NewStyle().
+	Bold(true).
+	PaddingTop(2).
+	PaddingLeft(4).
+	Width(50)
 
 type model struct {
 	timer     timer.Model
 	textInput textinput.Model
 	err       error
+
+	width  int
+	height int
 }
 
 func InitialModel() model {
@@ -39,6 +49,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
 	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		m.width = msg.Width
+		m.height = msg.Height
 	case timer.TickMsg:
 		m.timer, cmd = m.timer.Update(msg)
 		return m, cmd
@@ -107,13 +120,14 @@ func (m model) View() string {
 	footer := "\nesc • quit | enter • toggle cntdn\n"
 
 	var timeStr string
-	if m.timer.Running() {
+	if !m.textInput.Focused() && !m.timer.Timedout() {
 		timeStr = "\n" + m.timer.Timeout.Round(time.Second).String()
-	} else if !m.timer.Timedout() {
-		timeStr = "\n" + m.timer.Timeout.Round(time.Second).String() + "\t(STOPPED)"
+		if !m.timer.Running() {
+			timeStr += "\t(STOPPED)"
+		}
 	} else {
 		timeStr = "\n"
 	}
 
-	return fmt.Sprintf("%s\n\n%s\n%s\n\n%s\n", header, m.textInput.View(), timeStr, footer)
+	return style.Render(fmt.Sprintf("%s\n\n%s\n%s\n\n%s\n", header, m.textInput.View(), timeStr, footer))
 }
