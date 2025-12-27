@@ -62,9 +62,12 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		case tea.KeyEnter:
 			if m.textInput.Focused() {
-				initialTimeout := m.textInput.Placeholder
+				var initialTimeout string
 				if m.textInput.Value() != "" {
 					initialTimeout = m.textInput.Value()
+				} else {
+					initialTimeout = m.textInput.Placeholder
+					m.textInput.SetValue(m.textInput.Placeholder)
 				}
 
 				parsedTimeout, err := parseTime(initialTimeout)
@@ -74,7 +77,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 
 				m.textInput.Blur()
-				m.timer = timer.New(parsedTimeout)
+				m.timer = timer.NewWithInterval(parsedTimeout, 20*time.Millisecond)
 				cmd = m.timer.Init()
 
 				return m, cmd
@@ -82,6 +85,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				cmd = m.timer.Toggle()
 				return m, cmd
 			}
+
 		case tea.KeyRunes, tea.KeyBackspace:
 			m.textInput, cmd = m.textInput.Update(msg)
 			return m, cmd
@@ -102,14 +106,14 @@ func (m model) View() string {
 	// The footer
 	footer := "\nesc • quit | enter • toggle cntdn\n"
 
-	var time string
+	var timeStr string
 	if m.timer.Running() {
-		time = "\n" + m.timer.View()
+		timeStr = "\n" + m.timer.Timeout.Round(time.Second).String()
 	} else if !m.timer.Timedout() {
-		time = "\n" + m.timer.View() + "\t(STOPPED)"
+		timeStr = "\n" + m.timer.Timeout.Round(time.Second).String() + "\t(STOPPED)"
 	} else {
-		time = "\n"
+		timeStr = "\n"
 	}
 
-	return fmt.Sprintf("%s\n\n%s\n%s\n\n%s\n", header, m.textInput.View(), time, footer)
+	return fmt.Sprintf("%s\n\n%s\n%s\n\n%s\n", header, m.textInput.View(), timeStr, footer)
 }
